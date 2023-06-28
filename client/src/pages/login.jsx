@@ -2,7 +2,7 @@ import { CHECK_USER_ROUTE } from "@/utils/ApiRoutes";
 import { firebaseAuth } from "@/utils/FirebaseConfig";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import Image from "next/image";
-import React from "react";
+import React, { useEffect } from "react";
 import { FcGoogle } from "react-icons/fc";
 import axios from "axios";
 import { useRouter } from "next/router";
@@ -11,10 +11,13 @@ import { reducerCases } from "@/context/constants";
 
 function login() {
   const router = useRouter();
-  
- const [{}, dispatch] = useStateProvider()
 
+  const [{ userInfo, newUser }, dispatch] = useStateProvider();
 
+  useEffect(() => {
+    console.log(userInfo,newUser)
+    if (userInfo?.id && !newUser) router.push("/");
+  }, [userInfo, newUser]);
 
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
@@ -22,24 +25,43 @@ function login() {
       user: { displayName: name, email, photoURL: profileImage },
     } = await signInWithPopup(firebaseAuth, provider);
 
+
+   // console.log(name,email )
     try {
       if (email) {
         const { data } = await axios.post(CHECK_USER_ROUTE, { email });
+  
 
         if (!data.status) {
           dispatch({
-            type: reducerCases.SET_NEW_USER, newUser: true
-          })
+            type: reducerCases.SET_NEW_USER,
+            newUser: true,
+          });
           dispatch({
             type: reducerCases.SET_USER_INFO,
             userInfo: {
               name,
               email,
               profileImage,
-              status: "Available"
-            }
-          })
+              status: "Available",
+            },
+          });
           router.push("/onboarding");
+        }else{
+            const {id, name,email,profilePicture:profileImage, status} = data.data
+
+          dispatch({
+            type: reducerCases.SET_USER_INFO,
+            userInfo: {
+              id,
+              name,
+              email,
+              profileImage,
+              status
+            },
+          });
+
+          router.push("/")
         }
       }
     } catch (error) {

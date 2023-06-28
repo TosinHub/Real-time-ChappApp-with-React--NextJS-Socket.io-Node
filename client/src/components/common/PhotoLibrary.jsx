@@ -24,7 +24,7 @@ function PhotoLibrary({setImage, hidePhotoLibrary}) {
         {
           images.map((image,index)=>(
             <div 
-            
+            key={index}
             onClick={()=>{
               setImage(images[index])
               hidePhotoLibrary(false)
