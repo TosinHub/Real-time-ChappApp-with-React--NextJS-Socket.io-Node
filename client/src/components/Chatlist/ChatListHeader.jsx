@@ -1,10 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import Avatar from "../common/Avatar";
 import { useStateProvider } from "@/context/StateContext";
-import { onAuthStateChanged } from "firebase/auth";
-import { firebaseAuth } from "@/utils/FirebaseConfig";
-import { CHECK_USER_ROUTE } from "@/utils/ApiRoutes";
-import { useRouter } from "next/router";
+
 
 import {BsFillChatLeftTextFill, BsThreeDotsVertical} from 'react-icons/bs'
 import { reducerCases } from "@/context/constants";

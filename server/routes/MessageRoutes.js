@@ -1,11 +1,12 @@
 import {Router} from "express"
-import { addMessage } from "../controllers/MessageController.js"
+import { addMessage, getMessages } from "../controllers/MessageController.js"
 
 
 
 const router = Router()
 
 router.post("/send-message", addMessage)
+router.get("/get-messages/:from/:to", getMessages)
 
 
 export default router

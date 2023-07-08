@@ -1,19 +1,26 @@
-import React ,{useEffect, useState} from "react";
+/* eslint-disable no-unused-vars */
+import React ,{useEffect, useRef, useState} from "react";
 import ChatList from "./Chatlist/ChatList";
 import Empty from "./Empty";
 import { useStateProvider } from "@/context/StateContext";
 import { onAuthStateChanged } from "firebase/auth";
 import { firebaseAuth } from "@/utils/FirebaseConfig";
-import { CHECK_USER_ROUTE } from "@/utils/ApiRoutes";
+import { CHECK_USER_ROUTE, GET_MESSAGES, HOST } from "@/utils/ApiRoutes";
 import { useRouter } from "next/router";
 import { reducerCases } from "@/context/constants";
 import axios from "axios"
 import Chat from "./Chat/Chat";
+import { io } from "socket.io-client";
 
 function Main() {
-  const router = useRouter
+  const router = useRouter()
+  const socket = useRef()
+  socket.current = io(`http://localhost:3005`)
   const [{userInfo, currentChatUser}, dispatch] = useStateProvider()
   const [redirectLogin, setRedirectLogin] = useState(false)
+  const [socketEvent, setSocketEvent] = useState(false)
+
+
   
   useEffect(()=>{
     if(redirectLogin) router.push("/login")
@@ -28,7 +35,7 @@ function Main() {
       if(!data.status) {
         router.push("/login")
       }
-      
+  
       const {id,name,email,profilePicture: profileImage, status} = data.data
       dispatch({
         type: reducerCases.SET_USER_INFO,
@@ -43,6 +50,44 @@ function Main() {
     }
     
   })
+
+  useEffect(()=>{
+      socket.current.emit("add-user", userInfo?.id)
+      dispatch({type: reducerCases.SET_SOCKET, socket})
+
+  }, [userInfo])
+  
+  useEffect(()=>{
+   
+    if(socket.current && !socketEvent){
+      console.log(socket.current)
+      socket.current.on("msg-receive", (data)=>{
+        console.log(data)
+        dispatch({
+          type: reducerCases.ADD_MESSAGE,
+          newMessage : {
+            ...data.message
+          }
+        })
+      })
+      setSocketEvent(true)
+    }
+  }, [socket.current])
+
+  useEffect(()=>{
+
+    const getMessages = async () =>{
+      const {data : {messages}} = await axios.get(`${GET_MESSAGES}/${userInfo.id}/${currentChatUser.id}`)
+      dispatch({type:reducerCases.SET_MESSAGES, messages})
+    }
+      if(currentChatUser?.id){
+            getMessages()
+      }
+  }, [currentChatUser])
+  
+  
+  
+  
   return <>
         <div className="grid grid-cols-main h-screen w-screen max-h-screen max-w-full over">
                 <ChatList />
