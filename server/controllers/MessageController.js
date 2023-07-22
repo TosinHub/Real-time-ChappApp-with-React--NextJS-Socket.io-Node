@@ -1,5 +1,7 @@
 /* eslint-disable no-empty */
 /* eslint-disable no-unused-vars */
+
+import {renameSync} from "fs"
 import getPrismaInstance from "../utils/PrismaClient.js";
     const prisma = getPrismaInstance();
 
@@ -85,5 +87,32 @@ export const getMessages = async (req, res) =>{
 
     console.log(error.message)
     return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+
+export const addImageMessage = async (req,res,next)=>{
+  try {
+    if(req.file){
+      const date = Date.now()
+      let fileName ="uploads/images" + date + req.file.originalname
+      renameSync(req.file.path, fileName)
+      const {from, to} = req.query;
+      if(from && to){
+        const message =await prisma.messages.create({
+          data : {
+            message : fileName,
+            sender: {connect :{id: parseInt(from)}},
+            reciever: {connect : {id:parseInt(to)}},
+            type: "image"
+          }
+        })
+        return res.status(201).json({message})
+      }
+      return res.status(400).send("From, to is required.")
+
+    }
+  } catch (error) {
+    
   }
 }
